@@ -10,22 +10,52 @@ import coil.transform.BlurTransformation
 import coil.transform.CircleCropTransformation
 import coil.transform.GrayscaleTransformation
 import coil.transform.RoundedCornersTransformation
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 internal object ImageLoader {
+	var numCalls = 0
+	var totalTime = 0.0
 	suspend fun getBitmap(context: Context,
 	                      url: String,
 	                      transformation: ImageTransformation = ImageTransformation.None
 	): Bitmap? = withContext(Dispatchers.IO) {
 		url.takeUnless { it.isBlank() }
 				?.let {
-					(Coil.execute(GetRequest.Builder(context)
-							.data(it)
-							.applyTransformation(transformation, context)
-							.build())
-							.drawable as? BitmapDrawable)?.bitmap
+					val startupTime = System.nanoTime()
+					getBitmapWithCoil(context, url, transformation).
+//					getBitmapWithGlide(context, url, transformation).
+					also { addNewCallTime(System.nanoTime() - startupTime) }
 				}
+	}
+
+	private suspend fun getBitmapWithGlide(context: Context,
+	                                       url: String,
+	                                       transformation: ImageTransformation) =
+			Glide.with(context)
+					.asBitmap()
+					.load(url)
+					.apply(RequestOptions.circleCropTransform())
+					.submit()
+					.get()
+
+	private suspend fun getBitmapWithCoil(context: Context,
+	                                      url: String,
+	                                      transformation: ImageTransformation) =
+			(Coil.execute(GetRequest.Builder(context)
+					.data(url)
+					.applyTransformation(transformation, context)
+					.build())
+					.drawable as? BitmapDrawable)?.bitmap
+
+	private fun addNewCallTime(timeSpend: Long) {
+		synchronized(this) {
+			numCalls ++
+			totalTime += timeSpend
+			println("Benchmark: Call #$numCalls -> AverageTime: ${totalTime / numCalls}")
+		}
 	}
 
 	private fun GetRequestBuilder.applyTransformation(transformation: ImageTransformation, context: Context): GetRequestBuilder =
