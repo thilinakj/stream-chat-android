@@ -25,7 +25,6 @@ internal class MarkReadImpl(private val domainImpl: ChatDomainImpl) : MarkRead {
         val channelRepo = domainImpl.channel(cid)
 
         val runnable = suspend {
-
             channelRepo.markRead()
         }
         return CallImpl2(
