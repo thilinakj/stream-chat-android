@@ -14,6 +14,8 @@ import com.getstream.sdk.chat.view.channels.ChannelListView
 import com.getstream.sdk.chat.viewmodel.channels.ChannelsViewModel
 import com.getstream.sdk.chat.viewmodel.channels.bindView
 import com.getstream.sdk.chat.viewmodel.factory.ChannelsViewModelFactory
+import io.getstream.chat.android.client.ChatClient
+import io.getstream.chat.android.client.logger.ChatLogger
 import io.getstream.chat.sample.R
 import io.getstream.chat.sample.common.navigateSafely
 import io.getstream.chat.sample.databinding.FragmentChannelsBinding
@@ -66,6 +68,15 @@ class ChannelsFragment : Fragment() {
 
         binding.addNewChannelButton.setOnClickListener {
             findNavController().navigateSafely(R.id.action_to_create_channel)
+        }
+
+        binding.markAllReadButton.setOnClickListener {
+            ChatClient.instance().markAllRead().enqueue {
+                when {
+                    it.isSuccess -> ChatLogger.instance.logW("MarkAllRead", "Succeeded")
+                    it.isError -> ChatLogger.instance.logE("MarkAllRead", "Failed")
+                }
+            }
         }
 
         binding.channelsListView.setOnLongClickListener(

@@ -43,8 +43,10 @@ internal class QueryChannelsControllerImpl(
     override val endOfChannels: LiveData<Boolean> = _endOfChannels
 
     private val _channels = MutableLiveData<Map<String, Channel>>()
+
     // Keep the channel list locally sorted
-    override var channels: LiveData<List<Channel>> = Transformations.map(_channels) { cMap -> cMap.values.sortedWith(sort.comparator) }
+    override var channels: LiveData<List<Channel>> =
+        Transformations.map(_channels) { cMap -> cMap.values.sortedWith(sort.comparator) }
 
     private val logger = ChatLogger.get("ChatDomain QueryChannelsController")
 
@@ -109,14 +111,14 @@ internal class QueryChannelsControllerImpl(
             // refresh the channels
             // Careful, it's easy to have a race condition here.
             //
-            // The reason is that we are on the IO thread and update ChannelControlelr using postValue()
+            // The reason is that we are on the IO thread and update ChannelController using postValue()
             //  ChannelController.toChannel() can read the old version of the data using livedata.value
             // Solutions:
             // - suspend/wait for a few seconds (yuck, lets not do that)
             // - post the refresh on a livedata object with only channel ids, and transform that into channels (this ensures it will get called after postValue completes)
             // - run the refresh channel call below on the UI thread instead of IO thread
             domainImpl.scope.launch(Dispatchers.Main) {
-                refreshChannel(event.cid)
+                event.cid?.let(::refreshChannel) ?: refreshAllChannels()
             }
         }
     }
@@ -195,7 +197,8 @@ internal class QueryChannelsControllerImpl(
 
     private fun updateQueryChannelsSpec(channels: List<Channel>, isFirstPage: Boolean) {
         val newCids = channels.map(Channel::cid)
-        queryChannelsSpec.cids = if (isFirstPage) newCids else (queryChannelsSpec.cids + newCids).distinct()
+        queryChannelsSpec.cids =
+            if (isFirstPage) newCids else (queryChannelsSpec.cids + newCids).distinct()
     }
 
     suspend fun runQuery(pagination: QueryChannelsPaginationRequest): Result<List<Channel>> {
@@ -218,7 +221,9 @@ internal class QueryChannelsControllerImpl(
         // start the query online job before waiting for the query offline job
         val queryOnlineJob = if (domainImpl.isOnline()) {
             domainImpl.scope.async { runQueryOnline(pagination) }
-        } else { null }
+        } else {
+            null
+        }
         val channels = queryOfflineJob.await()
 
         // we could either wait till we are online
@@ -227,7 +232,8 @@ internal class QueryChannelsControllerImpl(
             queryOnlineJob.await()
         } else {
             recoveryNeeded = true
-            channels?.let { Result(it) } ?: Result(error = ChatError(message = "Channels Query wasn't run online and the offline storage is empty"))
+            channels?.let { Result(it) }
+                ?: Result(error = ChatError(message = "Channels Query wasn't run online and the offline storage is empty"))
         }
         loader.postValue(false)
         return output
@@ -271,6 +277,14 @@ internal class QueryChannelsControllerImpl(
      */
     fun refreshChannel(cId: String) {
         refreshChannels(listOf(cId))
+    }
+
+    /**
+     * Refreshes all channels returned in this query.
+     * Supports use cases like marking all channels as read.
+     */
+    fun refreshAllChannels() {
+        queryChannelsSpec.cids.let(::refreshChannels)
     }
 
     /**
