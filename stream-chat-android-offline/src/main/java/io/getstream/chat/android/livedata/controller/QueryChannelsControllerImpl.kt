@@ -15,13 +15,16 @@ import io.getstream.chat.android.client.logger.ChatLogger
 import io.getstream.chat.android.client.models.Channel
 import io.getstream.chat.android.client.utils.FilterObject
 import io.getstream.chat.android.client.utils.Result
+import io.getstream.chat.android.livedata.ChannelPreview
 import io.getstream.chat.android.livedata.ChatDomainImpl
 import io.getstream.chat.android.livedata.entity.ChannelConfigEntity
 import io.getstream.chat.android.livedata.request.QueryChannelsPaginationRequest
 import io.getstream.chat.android.livedata.request.toQueryChannelsRequest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val MESSAGE_LIMIT = 10
@@ -44,9 +47,13 @@ internal class QueryChannelsControllerImpl(
     override val endOfChannels: LiveData<Boolean> = _endOfChannels.asLiveData()
 
     private val _channels = MutableStateFlow<Map<String, Channel>>(emptyMap())
+    private val _sortedChannels = _channels.map { it.values.sortedWith(sort.comparator) }.stateIn(domainImpl.scope, SharingStarted.Eagerly, emptyList())
+    private val _sortedCids = _sortedChannels.map { it.map { it.cid } }.stateIn(domainImpl.scope, SharingStarted.Eagerly, emptyList())
+    private val _channelPreviews = MutableStateFlow<Map<String, ChannelPreview>>(emptyMap())
 
     // Keep the channel list locally sorted
-    override var channels: LiveData<List<Channel>> = _channels.map { it.values.sortedWith(sort.comparator) }.asLiveData()
+    override var channels: LiveData<List<Channel>> = _sortedChannels.asLiveData()
+    override var channelPreviews: LiveData<List<ChannelPreview>> = _channelPreviews.map { it.values.sortedBy { _sortedCids.value.indexOf(it.channel.cid) } }.asLiveData()
 
     private val logger = ChatLogger.get("ChatDomain QueryChannelsController")
 
@@ -61,7 +68,7 @@ internal class QueryChannelsControllerImpl(
         messageLimit: Int = MESSAGE_LIMIT,
         memberLimit: Int = MEMBER_LIMIT
     ): QueryChannelsPaginationRequest {
-        val channels = _channels.value ?: mapOf()
+        val channels = _channels.value
         return QueryChannelsPaginationRequest(
             sort,
             channels.size,
@@ -308,14 +315,24 @@ internal class QueryChannelsControllerImpl(
      */
     private fun refreshChannels(cIds: List<String>) {
         val cIdsInQuery = queryChannelsSpec.cids.intersect(cIds)
+
+        // update the channels
         val newChannels = cIdsInQuery.map { domainImpl.channel(it).toChannel() }
-        val existingChannelMap = _channels.value?.toMutableMap() ?: mutableMapOf()
+        val existingChannelMap = _channels.value.toMutableMap()
 
         newChannels.forEach { channel ->
             existingChannelMap[channel.cid] = channel
         }
-
         _channels.value = existingChannelMap
+
+        // update channel previews
+        val newPreviews = cIdsInQuery.map { domainImpl.channel(it).toChannelPreview() }
+        val existingPreviews = _channelPreviews.value.toMutableMap()
+
+        newPreviews.forEach { channelPreview ->
+            existingPreviews[channelPreview.channel.cid] = channelPreview
+        }
+        _channelPreviews.value = existingPreviews
     }
 
     /**
