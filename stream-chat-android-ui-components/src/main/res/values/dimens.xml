@@ -34,4 +34,7 @@
 
     <!--Channel List Items-->
     <dimen name="stream_channel_list_item_height">64dp</dimen>
+
+    <!--Message Preview Items-->
+    <dimen name="stream_message_preview_item_height">64dp</dimen>
 </resources>
