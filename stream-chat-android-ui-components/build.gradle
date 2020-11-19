@@ -82,5 +82,5 @@ dependencies {
     implementation Dependencies.constraintLayout
     implementation Dependencies.materialComponents
     implementation Dependencies.fragmentKtx
-    implementation Dependencies.androidxCoreKtx
+    implementation Dependencies.androidxViewPager2
 }
