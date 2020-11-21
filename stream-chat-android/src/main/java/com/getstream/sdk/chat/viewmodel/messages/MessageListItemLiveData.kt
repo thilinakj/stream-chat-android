@@ -218,7 +218,8 @@ internal class MessageListItemLiveData(
                             val reversedIndex = messages.size - i - 1
                             val messageItemCopy = messagesCopy[reversedIndex] as MessageListItem.MessageItem
                             val readBy = listOf(last) + messageItemCopy.messageReadBy
-                            val updatedMessageItem = messageItem.copy(messageReadBy = readBy)
+                            val readByUserIds = readBy.map { it.user.id }
+                            val updatedMessageItem = messageItem.copy(readByUserIds = readByUserIds).apply { messageReadBy = readBy }
                             // update the message in the message copy
                             messagesCopy[reversedIndex] = updatedMessageItem
                         } else {

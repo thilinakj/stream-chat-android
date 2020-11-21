@@ -47,8 +47,10 @@ public sealed class MessageListItem {
         val message: Message,
         val positions: List<Position> = listOf(),
         val isMine: Boolean = false,
-        val messageReadBy: List<ChannelUserRead> = listOf()
+        val readByUserIds: List<String> = listOf()
     ) : MessageListItem() {
+
+        var messageReadBy: List<ChannelUserRead> = listOf()
         public val isTheirs: Boolean
             get() = !isMine
     }

@@ -11,7 +11,7 @@ public data class Reaction(
     var messageId: String = "",
     var type: String = "",
     var score: Int = 0,
-    var user: User? = null,
+
     @SerializedName("user_id")
     var userId: String = "",
     @SerializedName("created_at")
@@ -28,6 +28,8 @@ public data class Reaction(
     override var extraData: MutableMap<String, Any> = mutableMapOf()
 
 ) : CustomObject {
+
+    var user: User? = null
     // this is a workaround around a backend issue
     // for some reason we sometimes only get the user id and not the user object
     // this needs more investigation on the backend side of things

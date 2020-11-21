@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth
 import io.getstream.chat.android.client.api.models.Pagination
 import io.getstream.chat.android.client.models.Message
+import io.getstream.chat.android.client.models.User
 import io.getstream.chat.android.client.utils.SyncStatus
 import io.getstream.chat.android.livedata.BaseDomainTest
 import io.getstream.chat.android.livedata.request.AnyChannelPaginationRequest
@@ -38,6 +39,21 @@ internal class MessageRepositoryTest : BaseDomainTest() {
         val message1 = data.createMessage()
         val message2 = message1.copy()
         Truth.assertThat(message1).isEqualTo(message2)
+    }
+
+    @Test
+    fun testMessageObjectWithUser() = runBlocking {
+        val messagea = Message(text = "hi",).apply { user = User("a") }
+        val messageb = Message(text = "hi").apply { user = User("a", unreadCount = 10) }
+        Truth.assertThat(messagea).isEqualTo(messageb)
+    }
+
+    @Test
+    fun testMessageObjectWithHTML() = runBlocking {
+        val messagea = Message(text = "hi").apply { html = "<p>hi</p>" }
+        val messageb = Message(text = "hi")
+        Truth.assertThat(messagea.hashCode()).isEqualTo(messageb.hashCode())
+        Truth.assertThat(messagea).isEqualTo(messageb)
     }
 
     @Test

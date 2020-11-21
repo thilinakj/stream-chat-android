@@ -114,7 +114,6 @@ internal fun randomMessage(
     id,
     cid,
     text,
-    html,
     parentId,
     command,
     attachments,
@@ -132,10 +131,9 @@ internal fun randomMessage(
     deletedAt,
     updatedLocallyAt,
     createdLocallyAt,
-    user,
     extraData,
     silent
-)
+).apply { this.user = user }
 
 internal fun randomChannel(
     cid: String = randomString(),

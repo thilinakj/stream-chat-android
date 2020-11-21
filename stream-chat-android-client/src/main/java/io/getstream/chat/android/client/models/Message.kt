@@ -10,7 +10,7 @@ public data class Message(
     var id: String = "",
     var cid: String = "",
     var text: String = "",
-    val html: String = "",
+
     @SerializedName("parent_id")
     var parentId: String? = null,
     var command: String? = null,
@@ -68,9 +68,6 @@ public data class Message(
     var createdLocallyAt: Date? = null,
 
     @IgnoreSerialisation
-    var user: User = User(),
-
-    @IgnoreSerialisation
     @IgnoreDeserialisation
     override var extraData: MutableMap<String, Any> = mutableMapOf(),
 
@@ -82,4 +79,9 @@ public data class Message(
     @SerializedName("show_in_channel")
     var showInChannel: Boolean = false
 
-) : CustomObject
+) : CustomObject {
+    @IgnoreSerialisation
+    var user: User = User()
+
+    var html: String = ""
+}
