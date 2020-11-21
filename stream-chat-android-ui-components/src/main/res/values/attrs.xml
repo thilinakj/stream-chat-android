@@ -172,4 +172,8 @@
         </attr>
 
     </declare-styleable>
+
+    <declare-styleable name="StreamAttachmentGalleryView">
+        <attr name="streamCountText" format="string"/>
+    </declare-styleable>
 </resources>
