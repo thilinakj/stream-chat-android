@@ -8,6 +8,7 @@
 ## stream-chat-android-offline
 
 ## stream-chat-android-ui-component
+Adding AttachmentGallery to handle attachments
 
 # Nov 20th, 2020 - 4.4.3
 ## stream-chat-android-client
